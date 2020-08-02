@@ -1,0 +1,28 @@
+name: Deploy Spruce News to GCP
+on:
+  push:
+    branches:
+      - 'master'
+
+jobs:
+  deploy:
+    name: Deploy Spruce News
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@master
+
+      - name: Build Docker image
+        run: |
+          docker build . --tag gcr.io/${{ secrets.SPRUCENEWS_PROJECT_ID }}/${{ secrets.SPRUCENEWS_APP_NAME }}
+      - name: Authenticate into Google Cloud Platform
+        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          service_account_email: ${{ secrets.GCP_EMAIL }}
+          service_account_key: ${{ secrets.GCP_AUTH }}
+
+      - name: Configure Docker to use Google Cloud Platform
+        run: "gcloud auth configure-docker --quiet"
+
+      - name: Push image to Google Cloud Container Registry
+        run: docker push gcr.io/${{ secrets.SPRUCENEWS_PROJECT_ID }}/${{ secrets.SPRUCENEWS_APP_NAME }}
